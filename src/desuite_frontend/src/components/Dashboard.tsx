@@ -4,6 +4,7 @@ import { User } from '../../../declarations/desuite_backend/desuite_backend.did'
 import { desuite_backend } from '../../../declarations/desuite_backend';
 import { file_management } from '../../../declarations/file_management';
 import { notes } from '../../../declarations/notes';
+// import { word_editor } from '../../../declarations/word_editor';
 import { task_manager } from '../../../declarations/task_manager';
 import { photo_gallery } from '../../../declarations/photo_gallery';
 import { expense_tracker } from '../../../declarations/expense_tracker';
@@ -14,6 +15,7 @@ import TaskManager from './TaskManager';
 import Settings from './Settings';
 import Calendar from './Calendar';
 import ExpenseTracker from './ExpenseTracker';
+import WordEditor from './WordEditor';
 import ConfirmationModal from './ConfirmationModal';
 import { 
   UserCircle, 
@@ -36,7 +38,7 @@ const Dashboard: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [countsLoading, setCountsLoading] = useState(true);
-  const [activeSection, setActiveSection] = useState<'overview' | 'files' | 'notes' | 'photos' | 'tasks' | 'calendar' | 'expenses' | 'security' | 'settings'>('overview');
+  const [activeSection, setActiveSection] = useState<'overview' | 'files' | 'notes' | 'photos' | 'tasks' | 'calendar' | 'expenses' | 'wordEditor' | 'security' | 'settings'>('overview');
   const [fileCount, setFileCount] = useState(0);
   const [noteCount, setNoteCount] = useState(0);
   const [photoCount, setPhotoCount] = useState(0);
@@ -133,6 +135,7 @@ const Dashboard: React.FC = () => {
   };
 
   const handleQuickAction = async (action: string) => {
+    console.log(action)
     switch (action) {
       case 'New Note':
         setActiveSection('notes');
@@ -153,6 +156,10 @@ const Dashboard: React.FC = () => {
       case 'Add Expense':
         setActiveSection('expenses');
         // Trigger new expense creation in ExpenseTracker component
+      case 'Create Document':  // Add this case
+        sessionStorage.removeItem('wordEditorContent'); // Clear any existing content
+        sessionStorage.setItem('wordEditorFileName', 'Untitled Document');
+        setActiveSection('wordEditor');
         break;
       default:
         break;
@@ -190,6 +197,7 @@ const Dashboard: React.FC = () => {
     { icon: CheckCircle, label: 'Tasks', section: 'tasks' },
     { icon: CalendarIcon, label: 'Calendar', section: 'calendar' },
     { icon: DollarSign, label: 'Expenses', section: 'expenses' },
+    { icon: FileText, label: 'Word Editor', section: 'wordEditor' },
     { icon: ShieldCheck, label: 'Security', section: 'security' },
     { icon: SettingsIcon, label: 'Settings', section: 'settings' },
   ];
@@ -305,20 +313,33 @@ const Dashboard: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
-                <h2 className="text-lg font-semibold mb-4">Recent Activity</h2>
-                <div className="space-y-4">
+                <h2 className="text-lg font-semibold mb-4">Recent Documents</h2>
+                <div className="space-y-3">
                   {[...Array(3)].map((_, i) => (
-                    <div key={i} className="flex items-start">
-                      <div className="h-8 w-8 rounded-full bg-gray-700 flex items-center justify-center mr-3">
-                        <FileText className="h-4 w-4 text-yellow-500" />
+                    <button
+                      key={i}
+                      onClick={() => setActiveSection('wordEditor')}
+                      className="w-full flex items-center p-3 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors"
+                    >
+                      <FileText className="h-5 w-5 text-yellow-500 mr-3" />
+                      <div className="flex-1 text-left">
+                        <p className="text-sm font-medium">Document {i + 1}</p>
+                        <p className="text-xs text-gray-400">Last edited 2 hours ago</p>
                       </div>
-                      <div>
-                        <p className="text-sm">You added a new note</p>
-                        <p className="text-xs text-gray-400">2 hours ago</p>
-                      </div>
-                    </div>
+                    </button>
                   ))}
                 </div>
+                <button
+                  onClick={() => {
+                    sessionStorage.removeItem('wordEditorContent');
+                    sessionStorage.setItem('wordEditorFileName', 'Untitled Document');
+                    setActiveSection('wordEditor');
+                  }}
+                  className="w-full mt-4 flex items-center justify-center px-4 py-2 bg-yellow-500 text-black rounded-lg hover:bg-yellow-600 transition-colors"
+                >
+                  <Pencil className="h-5 w-5 mr-2" />
+                  Create New Document
+                </button>
               </div>
 
               <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
@@ -329,7 +350,8 @@ const Dashboard: React.FC = () => {
                     { icon: Folder, label: 'Upload File' },
                     { icon: Image, label: 'Add Photo' },
                     { icon: CheckCircle, label: 'Create Task' },
-                    { icon: DollarSign, label: 'Add Expense' }
+                    { icon: DollarSign, label: 'Add Expense' },
+                    { icon: Pencil, label: 'Create Document' }
                   ].map(({ icon: Icon, label }) => (
                     <button
                       key={label}
@@ -352,6 +374,7 @@ const Dashboard: React.FC = () => {
         {activeSection === 'tasks' && <TaskManager />}
         {activeSection === 'calendar' && <Calendar />}
         {activeSection === 'expenses' && <ExpenseTracker />}
+        {activeSection === 'wordEditor' && <WordEditor />}
         {activeSection === 'security' && (
           <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
             <h2 className="text-lg font-semibold mb-4">Security Settings</h2>
